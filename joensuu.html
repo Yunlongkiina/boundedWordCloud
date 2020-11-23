@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Polylines</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBE3ApJmvci0C2rTN1A6en5vj2Uuo3R6LA&callback=initMap"
+      defer
+    ></script>
+  <script src="graham_scan.js"></script>
+  <script src="sylvester.js"></script>
+    <style type="text/css">
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      canvas{
+        position: absolute;
+        top: 200px;
+        left: 200px;
+      }
+    </style>
+    <script src="boundingWordCloud.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+  </body>
+</html>
