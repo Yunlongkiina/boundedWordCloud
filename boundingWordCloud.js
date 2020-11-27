@@ -1,4 +1,3 @@
-/* global google */
 
 const LOWER_COORDINATE_THRESHOLD = 600;
 const UPPER_COORDINATE_THRESHOLD = 700;
@@ -751,14 +750,55 @@ const WRbvhCanFindPosition = (currentWord, pw, shapeBvh) => {
   return foundPosition;
 };
 
+// find a drwing position for first word
+const findPositionForFirstWord = (firstWord, cityShape) => {
+
+  let step = 0;
+  let foundPosition = false;
+  const wordInitPosition = firstWord.drawPosition;
+
+  while (step < 500) {
+    if (wordInsideCityShape(
+      firstWord.bvhTree,
+      cityShape,
+      firstWord.drawPosition,
+      [0, 0]
+    )) {
+      foundPosition = true;
+      break;
+    } else if (wordInsideCityShape(
+      firstWord.rotatebvhTree,
+      cityShape,
+      firstWord.drawPosition,
+      [0, 0]
+    )) {
+      foundPosition = true;
+      break;
+    } else {
+      step += 0.3;
+      firstWord.drawPosition = moveSteps(
+        wordInitPosition[0],
+        wordInitPosition[1],
+        step
+      );
+    }
+  }
+
+  if (foundPosition) {
+    firstWord.rotate = true;
+  }
+}
+
 //w: input words; 
 //pw: placed words;
 //ww: wasted words. words that can not find position to draw
 const updateDrawPositionForWords = (words, shapeBvh) => {
   let pw = [],
     ww = [];
-
-  pw.push(words[0]);
+  if (pw.length == 0) {
+    findPositionForFirstWord(words[0], shapeBvh);
+    pw.push(words[0]);
+  }
   for (let i = words.length - 1; i > 0; i--) {
     if (WBvhCanFindPosition(words[i], pw, shapeBvh)) {
       pw.push(words[i]);
@@ -779,14 +819,12 @@ function drawInputwords(pFCanvas, wordsList) {
       pFCanvas.textBaseline = "bottom";
       pFCanvas.font = `${~~wordsList[i].fontSize}px sans-serif`; // eslint-disable-line no-bitwise
       pFCanvas.fillStyle = "red";
+      pFCanvas.translate(wordsList[i].drawPosition[0], wordsList[i].drawPosition[1]);
       pFCanvas.rotate((90 * Math.PI) / 180);
-      pFCanvas.fillText(
-        wordsList[i].word,
-        wordsList[i].drawPosition[0],
-        wordsList[i].drawPosition[1]
-      );
+      pFCanvas.fillText(wordsList[i].word, 0, 0);
       pFCanvas.restore();
-    } else {
+    }
+    else {
       pFCanvas.save();
       pFCanvas.textBaseline = "top";
       pFCanvas.font = `${~~wordsList[i].fontSize}px sans-serif`; // eslint-disable-line no-bitwise
@@ -811,11 +849,14 @@ function convertCanvasToBase64(wordList, cityShapeBvh) {
   );
 
   const cas = document.createElement("canvas");
+
   const ctx = cas.getContext("2d");
   cas.width = CANVAS_WIDTH;
   cas.height = CANVAS_HEIGHT;
+
   drawInputwords(ctx, newWordsList);
   const base64Data = cas.toDataURL("image/png", 1); // 1 means original quatity
+
   // decode content in canvas to base64 format pic
   return base64Data;
 }
@@ -826,33 +867,14 @@ const generateWordCloudImage = (cityshapePixelArr, wordsListRawData) => {
   // city shape bvh
   const cityShapeBvh = cityShapeBvhTree(cityshapePixArr);
   const base64Image = convertCanvasToBase64(wordsListRawData, cityShapeBvh);
-
   return base64Image;
 }
 
-// This example creates a 2-pixel-wide red polyline showing the path of
-// the first trans-Pacific flight between Oakland, CA, and Brisbane,
-// Australia which was made by Charles Kingsford Smith.
-let convexHullPoints;
-
-function computeConvexHull(points) {
-  var grahamScan = new ConvexHullGrahamScan();
-  for (var i in points) {
-    grahamScan.addPoint(points[i]["lat"], points[i]["lng"]);
-  }
-  var convexHull = grahamScan.getHull();
-  var pointArr = [];
-  for (var i = 0; i < convexHull.length; i++) {
-    pointArr.push({ lat: convexHull[i].x, lng: convexHull[i].y });
-  }
-  return pointArr;
-}
-
 // convert object array to array
-const processConvexHullPoints = (pointsObjArr) => {
+const processCityShapePoints = (pointsObjArr) => {
   let convexHullPointsArr = [];
 
-  for (let j = 0; j < convexHullPoints.length; j++) {
+  for (let j = 0; j < pointsObjArr.length; j++) {
     convexHullPointsArr[j] = [pointsObjArr[j].lat, pointsObjArr[j].lng];
   }
   return convexHullPointsArr;
@@ -877,11 +899,6 @@ const convertLatLngToCartesianCoordinateRadu = (latLngPointsArr, map) => {
     carteCooPointsArr.push([carteCoo_X, carteCoo_Y]);
   }
 
-  const testMinMax = findMinMaxXY(carteCooPointsArr);
-
-  const max_X = testMinMax[1];
-  const max_Y = testMinMax[3];
-
   return carteCooPointsArr;
 }
 
@@ -902,6 +919,7 @@ const getMinMaxLatlng = (latLngArray) => {
   }
   return [minLat, maxLat, minLng, maxLng];
 };
+
 function initMap() {
   const map = new google.maps.Map(document.getElementById("map"), {
     zoom: 9,
@@ -1004,8 +1022,6 @@ function initMap() {
 
   const minMaxLatLng = getMinMaxLatlng(joe);
 
-  convexHullPoints = computeConvexHull(joe);
-
   const poly = new google.maps.Polygon({
     path: joe,
     geodesic: true,
@@ -1015,20 +1031,10 @@ function initMap() {
   });
   poly.setMap(map);
 
-  const hull = new google.maps.Polygon({
-    path: convexHullPoints,
-    geodesic: true,
-    strokeColor: "#0000FF",
-    strokeOpacity: 1.0,
-    strokeWeight: 2,
-  });
-  hull.setMap(map);
-
   google.maps.event.addListenerOnce(map, "projection_changed", function () {
 
-    const convexHullPointsArray = processConvexHullPoints(convexHullPoints);
-
-    const processedLatLng = convertLatLngToCartesianCoordinateRadu(convexHullPointsArray, map);
+    const cityShapePointsArr = processCityShapePoints(joe);
+    const processedLatLng = convertLatLngToCartesianCoordinateRadu(cityShapePointsArr, map);
 
     const zoomedHullPoints = zoomOutCoordinates(processedLatLng);
 
@@ -1054,5 +1060,3 @@ function initMap() {
     wordCloud.setMap(map);
   });
 }
-
-
