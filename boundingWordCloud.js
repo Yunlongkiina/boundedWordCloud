@@ -927,7 +927,12 @@ const getMinMaxLatlng = (latLngArray) => {
   return [minLat, maxLat, minLng, maxLng];
 };
 
-// main entry to generate bounded word cloud
+/**
+ * set bounded wordc loud on Google map as overlay
+ * @param  {Object} mapObj Initialized Google map object
+ * @param  {Object Array} cityShapeLatLngObjArray City boundary lat/lng points. [{lat:vale, lng:value}, ...]
+ * @param  {Object Array} inputWordsObjArray input words. [{word:weight},...]
+*/
 const initWordCloud = (mapObj, cityShapeLatLngObjArray, inputWordsObjArray) => {
 
   const cityShapeLatLng = cityShapeLatLngObjArray;
