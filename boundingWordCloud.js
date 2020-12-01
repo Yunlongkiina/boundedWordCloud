@@ -1057,6 +1057,13 @@ const initWordCloud = (mapObj, cityShapeLatLngObjArray, inputWordsObjArray) => {
     mapObj.fitBounds(bounds);
     mapObj.setCenter(myLatLng);
     wordCloud.setMap(mapObj);
+    
+    let clickCounter = 0;
+    const btn = document.getElementById('btn').addEventListener('click', () => {
+      clickCounter = clickCounter + 1;
+      clickCounter % 2 === 0 ? wordCloud.setMap(mapObj) : wordCloud.setMap(null);
+    });
+    
   });
 
 
