@@ -1029,7 +1029,6 @@ const initWordCloud = (mapObj, cityShapeLatLngObjArray, inputWordsObjArray) => {
   }
 
   const minMaxLatLng = getMinMaxLatlng(cityShapeLatLng);
-  google.maps.event.addListenerOnce(mapObj, "projection_changed", function () {
 
     const cityShapePointsArr = processCityShapePoints(cityShapeLatLng);
     const processedLatLng = convertLatLngToCartesianCoordinateRadu(cityShapePointsArr, mapObj);
@@ -1057,16 +1056,7 @@ const initWordCloud = (mapObj, cityShapeLatLngObjArray, inputWordsObjArray) => {
     mapObj.fitBounds(bounds);
     mapObj.setCenter(myLatLng);
     wordCloud.setMap(mapObj);
-    
-    let clickCounter = 0;
-    const btn = document.getElementById('btn').addEventListener('click', () => {
-      clickCounter = clickCounter + 1;
-      clickCounter % 2 === 0 ? wordCloud.setMap(mapObj) : wordCloud.setMap(null);
-    });
-    
-  });
-
-
+    return wordCloud;
 };
 
 function initMap() {
@@ -1087,6 +1077,22 @@ function initMap() {
   });
   poly.setMap(map);
 
-  // map should be initlized before pass to initWordCloud
-  initWordCloud(map, joe, inputWordList);
+    /*  count clicking times
+   even number click: show owrd cloud
+   odd number click: remove word cloud
+  */
+  let clickCounter = 0;
+  // current overlay (word cloud image) object
+  let currentOverlayObj;
+  google.maps.event.addListener(poly, 'click', () => {
+    if (clickCounter % 2 == 0) {
+       // map should be initlized before pass to initWordCloud
+      currentOverlayObj = initWordCloud(map, joe, inputWordList);
+      clickCounter = clickCounter + 1;
+    } else {
+      currentOverlayObj.setMap(null);
+      clickCounter = clickCounter + 1;
+    }
+  });
+
 }
